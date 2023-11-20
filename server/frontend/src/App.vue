@@ -1,39 +1,40 @@
-<template>
-  <div id="app">
-    <h1>{{ message }}</h1>
-  </div>
-</template>
-
-<script>
-import { ref, onMounted } from 'vue';
-import io from 'socket.io-client';
-
-export default {
-  setup() {
-    const message = ref('Waiting for new data...');
-
-    const socket = io('http://127.0.0.1:3000');
-
-    socket.on('newData', (newData) => {
-      message.value = newData;
-    });
-
-    onMounted(() => {
-      console.log('Component mounted');
-    });
-
-    return {
-      message
-    };
-  }
-};
+<script setup>
+import Controller from "./components/Controller.vue";
+import { state } from "@/socket.js";
 </script>
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+<template>
+  <main>
+    <div>
+      <img
+        alt="Camera screen"
+        class="camera"
+        :src="`/src/assets/${state.time}.jpg`"
+      />
+      <p class="time">{{ state.time }}</p>
+    </div>
+    <Controller />
+  </main>
+</template>
+
+<style scoped>
+main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-column-gap: 10px;
+  width: 90%;
+  margin: 0 auto;
+  padding: 10px;
+  background-color: white;
+  place-items: center start;
+}
+
+.camera {
+  width: 100%;
+  height: auto;
+}
+
+.time {
   text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
 }
 </style>
