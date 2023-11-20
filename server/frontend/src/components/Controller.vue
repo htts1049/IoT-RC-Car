@@ -33,7 +33,7 @@ document.addEventListener("keyup", (event) => {
       document
         .getElementsByClassName(targets[index])[0]
         .children[0].classList.toggle("none");
-      socket.emit("frontend backend", `${value} stop`);
+      socket.emit("frontend backend", `${value}_stop`);
     }
   });
 });

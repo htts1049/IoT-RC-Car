@@ -58,6 +58,10 @@ io.on("connection", (socket) => {
     });
   });
   */
+  for (let [id, socket] of io.of("/").sockets) {
+    console.log(id);
+  }
+
   socket.on("frontend backend", (command) => {
     console.log(command);
     const time = "screen"; // Date.now().toString();
@@ -69,6 +73,7 @@ io.on("connection", (socket) => {
       path.join(frontPath, time + ".jpg")
     );
     */
-    socket.emit("backend frontend", { time: time });
+    socket.broadcast.emit("backend device", command);
+    //socket.emit("backend frontend", { time: time });
   });
 });
