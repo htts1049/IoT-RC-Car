@@ -1,17 +1,12 @@
 <script setup>
 import Controller from "./components/Controller.vue";
-import { state } from "@/socket.js";
 </script>
 
 <template>
   <main>
     <div>
-      <img
-        alt="Camera screen"
-        class="camera"
-        :src="`/src/assets/${state.time}.jpg`"
-      />
-      <p class="time">{{ state.time }}</p>
+      <img alt="Camera screen" class="camera" :src="`/src/assets/screen.jpg`" />
+      <p class="time">screen</p>
     </div>
     <Controller />
   </main>

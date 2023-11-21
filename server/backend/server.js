@@ -30,10 +30,6 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(basePath, "index.html"));
 });
 
-httpServer.listen(port, () =>
-  console.log(`server listening at http://localhost:${port}`)
-);
-
 /* Code for backend database
 const connection = createConnection({
   host: process.env.host || "localhost",
@@ -58,9 +54,15 @@ io.on("connection", (socket) => {
     });
   });
   */
+
   socket.on("frontend backend", (command) => {
     console.log(command);
-    const time = "screen"; // Date.now().toString();
+    socket.broadcast.emit("backend device", command);
+  });
+
+  socket.on("device backend", (dist) => {
+    console.log(dist);
+    //const time = "screen"; // Date.now().toString();
     /* Code for backend frontend
     console.log(path.join(frontPath, "screen.jpg"));
     console.log(path.join(frontPath, time + ".jpg"));
@@ -69,6 +71,10 @@ io.on("connection", (socket) => {
       path.join(frontPath, time + ".jpg")
     );
     */
-    socket.emit("backend frontend", { time: time });
+    socket.broadcast.emit("backend frontend", dist);
   });
 });
+
+httpServer.listen(port, () =>
+  console.log(`server listening at http://localhost:${port}`)
+);

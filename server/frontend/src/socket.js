@@ -1,9 +1,15 @@
 import { reactive } from "vue";
 import { io } from "socket.io-client";
 
-export const state = reactive({
+export const socket_states = reactive({
   connected: false,
-  time: "screen2", //Date.now().toString(),
+  //time: "screen2", //Date.now().toString(),
+  dist: {
+    up: 20,
+    left: 20,
+    right: 20,
+    down: 20,
+  },
 });
 
 const URL = "http://localhost:3000";
@@ -13,14 +19,21 @@ export const socket = io(URL, {
 });
 
 socket.on("connect", () => {
-  state.connected = true;
+  socket_states.connected = true;
 });
 
 socket.on("disconnect", () => {
-  state.connected = false;
+  socket_states.connected = false;
 });
 
+socket.on("backend frontend", (dist) => {
+  socket_states.dist = dist;
+  console.log(socket_states.dist);
+});
+
+/*
 socket.on("backend frontend", (time) => {
   state.time = time.time;
   console.log(state.time);
 });
+*/
