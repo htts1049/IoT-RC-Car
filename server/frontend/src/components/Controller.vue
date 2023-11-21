@@ -5,7 +5,6 @@ const toggleButton = (event) => {
   socket.emit("frontend backend", event.currentTarget.getAttribute("class"));
 };
 const threshold = 10;
-const targets = ["up", "left", "right", "down"];
 const keys = [
   ["w", "W", "ArrowUp"],
   ["a", "A", "ArrowLeft"],
@@ -14,21 +13,25 @@ const keys = [
 ];
 const states = [
   {
+    target: "up",
     blocked: false,
     pressed: false,
     keynum: 0,
   },
   {
+    target: "left",
     blocked: false,
     pressed: false,
     keynum: 0,
   },
   {
+    target: "right",
     blocked: false,
     pressed: false,
     keynum: 0,
   },
   {
+    target: "down",
     blocked: false,
     pressed: false,
     keynum: 0,
@@ -36,24 +39,24 @@ const states = [
 ];
 
 document.addEventListener("keydown", (event) => {
-  targets.forEach((target, ti) => {
+  states.forEach((state, ti) => {
     keys[ti].forEach((key, ki) => {
       if (states[3 - ti].blocked || !states[3 - ti].pressed) {
-        if (key === event.key && (states.keynum >> ki) % 2 === 0) {
-          states[ti].keynum += 1 << ki;
-          if (!states[ti].pressed) {
-            states[ti].pressed = true;
+        if (key === event.key && (state.keynum >> ki) % 2 === 0) {
+          state.keynum += 1 << ki;
+          if (!state.pressed) {
+            state.pressed = true;
             document
-              .getElementsByClassName(targets[ti])[0]
+              .getElementsByClassName(state.target)[0]
               .children[0].classList.remove("none");
-            if (!states[ti].blocked) {
+            if (!state.blocked) {
               document
-                .getElementsByClassName(targets[ti])[0]
+                .getElementsByClassName(state.target)[0]
                 .children[0].classList.add("pressed");
-              socket.emit("frontend backend", target);
+              socket.emit("frontend backend", state.target);
             } else {
               document
-                .getElementsByClassName(targets[ti])[0]
+                .getElementsByClassName(state.target)[0]
                 .children[0].classList.add("blocked");
             }
           }
@@ -64,24 +67,24 @@ document.addEventListener("keydown", (event) => {
 });
 
 document.addEventListener("keyup", (event) => {
-  targets.forEach((target, ti) => {
+  states.forEach((state, ti) => {
     keys[ti].forEach((key, ki) => {
       if (states[3 - ti].blocked || !states[3 - ti].pressed) {
-        if (key === event.key && (states.keynum >> ki) % 2 === 1) {
-          states[ti].keynum -= 1 << ki;
-          if (states[ti].keynum === 0) {
-            states[ti].pressed = false;
+        if (key === event.key && (state.keynum >> ki) % 2 === 1) {
+          state.keynum -= 1 << ki;
+          if (state.keynum === 0) {
+            state.pressed = false;
             document
-              .getElementsByClassName(targets[ti])[0]
+              .getElementsByClassName(state.target)[0]
               .children[0].classList.add("none");
-            if (!states[ti].blocked) {
+            if (!state.blocked) {
               document
-                .getElementsByClassName(targets[ti])[0]
+                .getElementsByClassName(state.target)[0]
                 .children[0].classList.remove("pressed");
-              socket.emit("frontend backend", `${target}_stop`);
+              socket.emit("frontend backend", `${state.target}_stop`);
             } else {
               document
-                .getElementsByClassName(targets[ti])[0]
+                .getElementsByClassName(state.target)[0]
                 .children[0].classList.remove("blocked");
             }
           }
@@ -96,7 +99,7 @@ const setStateByDist = (dist, si) => {
   if (states[si].blocked) {
     states[si].pressed = false;
     states[si].keynum = 0;
-    socket.emit("frontend backend", `${targets[si]}_stop`);
+    socket.emit("frontend backend", `${states[si].target}_stop`);
   }
   return states[si].blocked
     ? states[si].pressed
