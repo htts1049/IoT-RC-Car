@@ -64,7 +64,6 @@ document.addEventListener("keydown", (event) => {
 });
 
 document.addEventListener("keyup", (event) => {
-<<<<<<< HEAD
   targets.forEach((target, ti) => {
     keys[ti].forEach((key, ki) => {
       if (states[3 - ti].blocked || !states[3 - ti].pressed) {
@@ -89,16 +88,6 @@ document.addEventListener("keyup", (event) => {
         }
       }
     });
-=======
-  targets.forEach((value, index) => {
-    if (keys[index].includes(event.key) && pressed[index]) {
-      pressed[index] = false;
-      document
-        .getElementsByClassName(targets[index])[0]
-        .children[0].classList.toggle("none");
-      socket.emit("frontend backend", `${value}_stop`);
-    }
->>>>>>> b3d28fbd6e39eccef68678383b22b01b8cc38d9b
   });
 });
 
