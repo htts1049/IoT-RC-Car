@@ -1,145 +1,159 @@
 <script setup>
+import { ref } from "vue";
 import { socket, socket_states } from "@/socket.js";
 const toggleButton = (event) => {
   event.currentTarget.children[0].classList.toggle("none");
   socket.emit("frontend backend", event.currentTarget.getAttribute("class"));
 };
 const threshold = 10;
-const keys = [
-  ["w", "W", "ArrowUp"],
-  ["a", "A", "ArrowLeft"],
-  ["d", "D", "ArrowRight"],
-  ["s", "S", "ArrowDown"],
-];
-const states = [
+
+let lock = false;
+
+const states = ref([
   {
     target: "up",
+    keys: ["w", "W", "ArrowUp"],
     blocked: false,
     pressed: false,
     keynum: 0,
+    class: "none",
   },
   {
     target: "left",
+    keys: ["a", "A", "ArrowLeft"],
     blocked: false,
     pressed: false,
     keynum: 0,
+    class: "none",
   },
   {
     target: "right",
+    keys: ["d", "D", "ArrowRight"],
     blocked: false,
     pressed: false,
     keynum: 0,
+    class: "none",
   },
   {
     target: "down",
+    keys: ["s", "S", "ArrowDown"],
     blocked: false,
     pressed: false,
     keynum: 0,
+    class: "none",
   },
-];
+]);
 
 document.addEventListener("keydown", (event) => {
-  states.forEach((state, ti) => {
-    keys[ti].forEach((key, ki) => {
-      if (states[3 - ti].blocked || !states[3 - ti].pressed) {
-        if (key === event.key && (state.keynum >> ki) % 2 === 0) {
+  let changed = false;
+  let message = "";
+  lock = true;
+  console.log("down");
+  let newstate = states.value.map((state, ti) => {
+    if (states.value[3 - ti].blocked || !states.value[3 - ti].pressed) {
+      if (state.keys.includes(event.key)) {
+        let ki = state.keys.findIndex((key) => key === event.key);
+        if ((state.keynum >> ki) % 2 === 0) {
           state.keynum += 1 << ki;
           if (!state.pressed) {
+            changed = true;
             state.pressed = true;
-            document
-              .getElementsByClassName(state.target)[0]
-              .children[0].classList.remove("none");
             if (!state.blocked) {
-              document
-                .getElementsByClassName(state.target)[0]
-                .children[0].classList.add("pressed");
-              socket.emit("frontend backend", state.target);
+              message += `${state.target}_press `;
+              state.class = "pressed";
             } else {
-              document
-                .getElementsByClassName(state.target)[0]
-                .children[0].classList.add("blocked");
+              message += `${state.target}_block `;
+              state.class = "blocked";
             }
           }
         }
       }
-    });
+    }
+    return { ...state };
   });
+  if (changed) {
+    console.log(newstate);
+    console.log(message);
+    states.value = newstate;
+    socket.emit("frontend backend", message);
+  }
 });
 
 document.addEventListener("keyup", (event) => {
-  states.forEach((state, ti) => {
-    keys[ti].forEach((key, ki) => {
-      if (states[3 - ti].blocked || !states[3 - ti].pressed) {
-        if (key === event.key && (state.keynum >> ki) % 2 === 1) {
-          state.keynum -= 1 << ki;
-          if (state.keynum === 0) {
-            state.pressed = false;
-            document
-              .getElementsByClassName(state.target)[0]
-              .children[0].classList.add("none");
-            if (!state.blocked) {
-              document
-                .getElementsByClassName(state.target)[0]
-                .children[0].classList.remove("pressed");
-              socket.emit("frontend backend", `${state.target}_stop`);
-            } else {
-              document
-                .getElementsByClassName(state.target)[0]
-                .children[0].classList.remove("blocked");
-            }
-          }
+  let changed = false;
+  let message = "";
+
+  console.log("up");
+  let newstate = states.value.map((state) => {
+    if (state.keys.includes(event.key)) {
+      let ki = state.keys.findIndex((key) => key === event.key);
+      if ((state.keynum >> ki) % 2 === 1) {
+        state.keynum -= 1 << ki;
+        if (state.keynum === 0) {
+          changed = true;
+          state.pressed = false;
+          message += `${state.target}_stop `;
+          state.class = "none";
         }
       }
-    });
+    }
+    return { ...state };
   });
+  if (changed) {
+    console.log(newstate);
+    console.log(message);
+    states.value = newstate;
+    socket.emit("frontend backend", message);
+  }
 });
 
-const setStateByDist = (dist, si) => {
-  states[si].blocked = dist < threshold;
-  if (states[si].blocked) {
-    states[si].pressed = false;
-    states[si].keynum = 0;
-    socket.emit("frontend backend", `${states[si].target}_stop`);
+const setStateByDist = (dist) => {
+  console.log("set");
+  console.log(states.value);
+  console.log(dist);
+  let changed = false;
+  let message = "";
+  let newstate = states.value.map((state, si) => {
+    if (state.pressed) {
+      if (dist[state.target] < threshold && !state.blocked) {
+        changed = true;
+        message += `${state.target}_blocked `;
+        state.blocked = true;
+        state.class = "blocked";
+      } else if (dist[state.target] >= threshold && state.blocked) {
+        changed = true;
+        message += `${state.target}_pressed `;
+        state.blocked = false;
+        state.class = "pressed";
+      }
+    }
+    return { ...state };
+  });
+  if (changed) {
+    console.log(newstate);
+    states.value = newstate;
+    console.log(states.value);
+    //socket.emit("frontend backend", message);
   }
-  return states[si].blocked
-    ? states[si].pressed
-      ? "blocked"
-      : "none"
-    : states[si].pressed
-    ? "pressed"
-    : "none";
 };
 </script>
 
 <template>
+  <div class="none">
+    {{ setStateByDist(socket_states.dist) }}
+  </div>
   <div class="controller">
     <div class="up" @click="toggleButton">
-      <img
-        alt="up"
-        :class="setStateByDist(socket_states.dist.up, 0)"
-        src="../assets/up.svg"
-      />
+      <img alt="up" :class="states[0].class" src="../assets/up.svg" />
     </div>
     <div class="left" @click="toggleButton">
-      <img
-        alt="left"
-        :class="setStateByDist(socket_states.dist.left, 1)"
-        src="../assets/left.svg"
-      />
+      <img alt="left" :class="states[1].class" src="../assets/left.svg" />
     </div>
     <div class="right" @click="toggleButton">
-      <img
-        alt="right"
-        :class="setStateByDist(socket_states.dist.right, 2)"
-        src="../assets/right.svg"
-      />
+      <img alt="right" :class="states[2].class" src="../assets/right.svg" />
     </div>
     <div class="down" @click="toggleButton">
-      <img
-        alt="down"
-        :class="setStateByDist(socket_states.dist.up, 3)"
-        src="../assets/down.svg"
-      />
+      <img alt="down" :class="states[3].class" src="../assets/down.svg" />
     </div>
   </div>
 </template>

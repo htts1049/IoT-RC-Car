@@ -28,6 +28,7 @@ socket.on("disconnect", () => {
 
 socket.on("backend frontend", (dist) => {
   socket_states.dist = dist;
+  console.log("socket");
   console.log(socket_states.dist);
 });
 
