@@ -54,6 +54,12 @@ io.on("connection", (socket) => {
     });
   });
   */
+<<<<<<< HEAD
+=======
+  for (let [id, socket] of io.of("/").sockets) {
+    console.log(id);
+  }
+>>>>>>> b3d28fbd6e39eccef68678383b22b01b8cc38d9b
 
   socket.on("frontend backend", (command) => {
     console.log(command);
@@ -71,7 +77,12 @@ io.on("connection", (socket) => {
       path.join(frontPath, time + ".jpg")
     );
     */
+<<<<<<< HEAD
     socket.broadcast.emit("backend frontend", dist);
+=======
+    socket.broadcast.emit("backend device", command);
+    //socket.emit("backend frontend", { time: time });
+>>>>>>> b3d28fbd6e39eccef68678383b22b01b8cc38d9b
   });
 });
 
