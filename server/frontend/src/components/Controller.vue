@@ -55,18 +55,20 @@ const clickButton = (event) => {
             changed = true;
             message += `${state.target}_press `;
             state.class = "pressed";
+            state.clicked = true;
           }
         } else {
           changed = true;
           message += `${state.target}_stop `;
           state.class = "none";
+          state.clicked = false;
         }
       }
-      state.clicked = !state.clicked;
     }
     return { ...state };
   });
   if (changed) {
+    console.log("click");
     states.value = newstate;
     socket.emit("frontend backend", message);
   }
@@ -107,7 +109,7 @@ document.addEventListener("keydown", (event) => {
 document.addEventListener("keyup", (event) => {
   let changed = false;
   let message = "";
-  let newstate = states.value.map((state) => {
+  let newstate = states.value.map((state, si) => {
     if (state.keys.includes(event.key)) {
       let ki = state.keys.findIndex((key) => key === event.key);
       if ((state.keynum >> ki) % 2 === 1) {
@@ -184,7 +186,8 @@ const setStateByDist = (dist) => {
 .controller {
   display: grid;
   width: 100%;
-  aspect-rasio: 1;
+  height: auto;
+  aspect-ratio: 1 / 1;
   grid-template-areas:
     ". up ."
     "left .  right"
