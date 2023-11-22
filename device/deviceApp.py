@@ -4,8 +4,11 @@ from DISTANCE import *
 import threading
 import socketio
 import time
+import base64
+import cv2
 
 rcCar = rcCar()
+cap = cv2.VideoCapture(0)
 
 # Connect server
 sio = socketio.Client()
@@ -26,26 +29,28 @@ sio.connect("http://192.168.26.43:3000")
 
 # Send data to server
 async def sendData():
- 
+
     while True:
 
         # distance
-        up = round(await forwardDistance(), 0)
-        left = round(await leftDistance(), 0)
-        right = round(await rightDistance(), 0)
-        down = round(await backwardDistance(), 0)
+        up = round(await forwardDistance(), 6)
+        left = round(await leftDistance(), 6)
+        right = round(await rightDistance(), 6)
+        down = round(await backwardDistance(), 6)
 
         # time
         date = os.popen("date -I").read()
         date = date[0:-1]
         time = os.popen("date +%T").read()
         time = time[0:-1]
-        dateTime = date + ' ' + time
+        nanosecond = os.popen("date +%N").read()
+        nanosecond = nanosecond[0:-1]
+        dateTime = date + ' ' + time + '.' + nanosecond
 
         # image
-        os.system('fswebcam image.jpg')
-        imageFile = open('image.jpg', 'rb')
-        imageBlob = imageFile.read()
+        _, img = cap.read()
+        _, imageEncoded = cv2.imencode('.jpg', img)
+        imageBlob = imageEncoded.tobytes()
 
         # wrap datas in json
         json_data = {
@@ -54,12 +59,11 @@ async def sendData():
                     'down': down,
                     'left': left,
                     'right': right,
-
                     },
                 'imageBlob' : imageBlob,
                 'dateTime' : dateTime,
                 }
-
+ 
         sio.emit('device backend', json_data)
 
 asyncio.run(sendData())
