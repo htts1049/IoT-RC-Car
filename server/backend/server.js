@@ -62,7 +62,7 @@ io.on("connection", (socket) => {
     socket.broadcast.emit(
       "backend frontend",
       dist,
-      json_data.blob,
+      json_data.imageBlob,
       json_data.dateTime
     );
   });

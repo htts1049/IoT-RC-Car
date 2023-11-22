@@ -5,10 +5,10 @@ export const socket_states = reactive({
   connected: false,
   //time: "screen2", //Date.now().toString(),
   dist: {
-    up: true,
-    left: true,
-    right: true,
-    down: true,
+    up: false,
+    left: false,
+    right: false,
+    down: false,
   },
   src: "/src/assets/screen.jpg",
   time: new Date().toString(),
@@ -17,7 +17,6 @@ export const socket_states = reactive({
 const URL = "http://localhost:3000";
 
 let first = false;
-
 export const socket = io(URL, {
   cors: { origin: "*" },
 });
@@ -30,13 +29,14 @@ socket.on("disconnect", () => {
   socket_states.connected = false;
 });
 
-socket.on("backend frontend", (dist, blob, dateTime) => {
+socket.on("backend frontend", (dist, imageBlob, dateTime) => {
   socket_states.dist = dist;
   if (!first) {
     first = true;
   } else {
     window.URL.revokeObjectURL(socket_states.src);
   }
+  const blob = new Blob([imageBlob], { type: "image/png" });
   socket_states.src = window.URL.createObjectURL(blob);
   socket_states.time = dateTime.toString();
 });
