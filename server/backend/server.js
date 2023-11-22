@@ -28,6 +28,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(basePath, "index.html"));
 });
 
+/*
 const connection = createConnection({
   host: process.env.host || "localhost",
   user: process.env.user || "root",
@@ -36,6 +37,7 @@ const connection = createConnection({
 });
 
 connection.connect();
+*/
 
 const insertDB = (json_data) => {
   const query = `INSERT INTO ${
@@ -52,7 +54,7 @@ const insertDB = (json_data) => {
 
 io.on("connection", (socket) => {
   socket.on("device backend", (json_data) => {
-    insertDB(json_data);
+    //insertDB(json_data);
     const threshold = 10;
     let dist = {};
     for (let d in json_data.dist) {
