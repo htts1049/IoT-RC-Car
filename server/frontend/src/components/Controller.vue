@@ -1,79 +1,104 @@
 <script setup>
 import { ref } from "vue";
 import { socket, socket_states } from "@/socket.js";
-const toggleButton = (event) => {
-  event.currentTarget.children[0].classList.toggle("none");
-  socket.emit("frontend backend", event.currentTarget.getAttribute("class"));
-};
-const threshold = 10;
-
-let lock = false;
 
 const states = ref([
   {
     target: "up",
-    keys: ["w", "W", "ArrowUp"],
-    blocked: false,
-    pressed: false,
-    keynum: 0,
     class: "none",
+    blocked: false,
+    clicked: false,
+    pressed: false,
+    keys: ["w", "W", "ArrowUp"],
+    keynum: 0,
   },
   {
     target: "left",
-    keys: ["a", "A", "ArrowLeft"],
-    blocked: false,
-    pressed: false,
-    keynum: 0,
     class: "none",
+    blocked: false,
+    clicked: false,
+    pressed: false,
+    keys: ["a", "A", "ArrowLeft"],
+    keynum: 0,
   },
   {
     target: "right",
-    keys: ["d", "D", "ArrowRight"],
-    blocked: false,
-    pressed: false,
-    keynum: 0,
     class: "none",
+    blocked: false,
+    clicked: false,
+    pressed: false,
+    keys: ["d", "D", "ArrowRight"],
+    keynum: 0,
   },
   {
     target: "down",
-    keys: ["s", "S", "ArrowDown"],
-    blocked: false,
-    pressed: false,
-    keynum: 0,
     class: "none",
+    blocked: false,
+    clicked: false,
+    pressed: false,
+    keys: ["s", "S", "ArrowDown"],
+    keynum: 0,
   },
 ]);
+
+const clickButton = (event) => {
+  let changed = false;
+  let message = "";
+  let newstate = states.value.map((state, si) => {
+    if (state.target === event.currentTarget.className) {
+      if (!state.pressed && !state.blocked) {
+        if (!state.clicked) {
+          if (
+            states.value[3 - si].blocked ||
+            (!states.value[3 - si].pressed && !states.value[3 - si].clicked)
+          ) {
+            changed = true;
+            message += `${state.target}_press `;
+            state.class = "pressed";
+          }
+        } else {
+          changed = true;
+          message += `${state.target}_stop `;
+          state.class = "none";
+        }
+      }
+      state.clicked = !state.clicked;
+    }
+    return { ...state };
+  });
+  if (changed) {
+    states.value = newstate;
+    socket.emit("frontend backend", message);
+  }
+};
 
 document.addEventListener("keydown", (event) => {
   let changed = false;
   let message = "";
-  lock = true;
-  console.log("down");
-  let newstate = states.value.map((state, ti) => {
-    if (states.value[3 - ti].blocked || !states.value[3 - ti].pressed) {
-      if (state.keys.includes(event.key)) {
-        let ki = state.keys.findIndex((key) => key === event.key);
-        if ((state.keynum >> ki) % 2 === 0) {
-          state.keynum += 1 << ki;
-          if (!state.pressed) {
-            changed = true;
-            state.pressed = true;
-            if (!state.blocked) {
+  let newstate = states.value.map((state, si) => {
+    if (state.keys.includes(event.key)) {
+      let ki = state.keys.findIndex((key) => key === event.key);
+      if ((state.keynum >> ki) % 2 === 0) {
+        state.keynum += 1 << ki;
+        if (!state.pressed) {
+          if (!state.clicked && !state.blocked) {
+            if (
+              states.value[3 - si].blocked ||
+              (!states.value[3 - si].pressed && !states.value[3 - si].clicked)
+            ) {
+              changed = true;
               message += `${state.target}_press `;
               state.class = "pressed";
-            } else {
-              message += `${state.target}_block `;
-              state.class = "blocked";
             }
           }
+          state.pressed = true;
         }
       }
     }
     return { ...state };
   });
   if (changed) {
-    console.log(newstate);
-    console.log(message);
+    console.log("down");
     states.value = newstate;
     socket.emit("frontend backend", message);
   }
@@ -82,58 +107,55 @@ document.addEventListener("keydown", (event) => {
 document.addEventListener("keyup", (event) => {
   let changed = false;
   let message = "";
-
-  console.log("up");
   let newstate = states.value.map((state) => {
     if (state.keys.includes(event.key)) {
       let ki = state.keys.findIndex((key) => key === event.key);
       if ((state.keynum >> ki) % 2 === 1) {
         state.keynum -= 1 << ki;
         if (state.keynum === 0) {
-          changed = true;
+          if (!state.clicked && !state.blocked) {
+            changed = true;
+            message += `${state.target}_stop `;
+            state.class = "none";
+          }
           state.pressed = false;
-          message += `${state.target}_stop `;
-          state.class = "none";
         }
       }
     }
     return { ...state };
   });
   if (changed) {
-    console.log(newstate);
-    console.log(message);
+    console.log("up");
     states.value = newstate;
     socket.emit("frontend backend", message);
   }
 });
 
 const setStateByDist = (dist) => {
-  console.log("set");
-  console.log(states.value);
-  console.log(dist);
   let changed = false;
   let message = "";
-  let newstate = states.value.map((state, si) => {
-    if (state.pressed) {
-      if (dist[state.target] < threshold && !state.blocked) {
+  let newstate = states.value.map((state) => {
+    if (state.pressed || state.clicked) {
+      if (dist[state.target] && !state.blocked) {
         changed = true;
-        message += `${state.target}_blocked `;
         state.blocked = true;
         state.class = "blocked";
-      } else if (dist[state.target] >= threshold && state.blocked) {
+        message += `${state.target}_stop `;
+      } else if (!dist[state.target] && state.blocked) {
         changed = true;
-        message += `${state.target}_pressed `;
+        state.class = "none";
         state.blocked = false;
-        state.class = "pressed";
+        state.clicked = false;
+        state.pressed = false;
+        state.keynum = 0;
       }
     }
     return { ...state };
   });
   if (changed) {
-    console.log(newstate);
+    console.log("set");
     states.value = newstate;
-    console.log(states.value);
-    //socket.emit("frontend backend", message);
+    socket.emit("frontend backend", message);
   }
 };
 </script>
@@ -143,16 +165,16 @@ const setStateByDist = (dist) => {
     {{ setStateByDist(socket_states.dist) }}
   </div>
   <div class="controller">
-    <div class="up" @click="toggleButton">
+    <div class="up" @click="clickButton">
       <img alt="up" :class="states[0].class" src="../assets/up.svg" />
     </div>
-    <div class="left" @click="toggleButton">
+    <div class="left" @click="clickButton">
       <img alt="left" :class="states[1].class" src="../assets/left.svg" />
     </div>
-    <div class="right" @click="toggleButton">
+    <div class="right" @click="clickButton">
       <img alt="right" :class="states[2].class" src="../assets/right.svg" />
     </div>
-    <div class="down" @click="toggleButton">
+    <div class="down" @click="clickButton">
       <img alt="down" :class="states[3].class" src="../assets/down.svg" />
     </div>
   </div>
@@ -162,7 +184,7 @@ const setStateByDist = (dist) => {
 .controller {
   display: grid;
   width: 100%;
-  aspect-ratio: 1;
+  aspect-rasio: 1;
   grid-template-areas:
     ". up ."
     "left .  right"
