@@ -1,6 +1,6 @@
 import os
 from RC_CAR import *
-from DISTANT import getDistance
+from DISTANCE import *
 import threading
 import socketio
 import time
@@ -24,38 +24,49 @@ def disconnect():
 
 sio.connect("http://192.168.26.43:3000")
 
-
-
 # Send data to server
-def sendData():
+async def sendData():
+ 
     while True:
 
         # distance
-        distance = getDistance()
-        
+        up = round(await forwardDistance(), 0)
+        left = round(await leftDistance(), 0)
+        right = round(await rightDistance(), 0)
+        down = round(await backwardDistance(), 0)
+
+        # time
+        date = os.popen("date -I").read()
+        date = date[0:-1]
+        time = os.popen("date +%T").read()
+        time = time[0:-1]
+        dateTime = date + ' ' + time
+
         # image
-        # os.system('fswebcam ./image.jpg')
-        # image_file = open('./image.jpg', 'rb')
-        # image_blob = image_file.read()
+        os.system('fswebcam image.jpg')
+        imageFile = open('image.jpg', 'rb')
+        imageBlob = imageFile.read()
 
         # wrap datas in json
         json_data = {
-                'distance' : distance,
-                # 'imageBlob' : image_blob
+                'dist' :{
+                    'up': up,
+                    'down': down,
+                    'left': left,
+                    'right': right,
+
+                    },
+                'imageBlob' : imageBlob,
+                'dateTime' : dateTime,
                 }
 
+        sio.emit('device backend', json_data)
 
-        sio.emit('deviceData', json_data)
-        time.sleep(0.1)
-
-
-t1 = threading.Thread(target=sendData)
-t1.start()
-
-
+asyncio.run(sendData())
 
 # Drive RC car according to state
 def driveCar():
+
     while True:
         if(rcCar.moveState == rcCar.FORWARD):
             rcCar.forward()
@@ -72,13 +83,10 @@ def driveCar():
         elif(rcCar.directionState == rcCar.RIGHT):
             rcCar.right()
 
-
-t2 = threading.Thread(target=driveCar)
-t2.start()
-  
+t1 = threading.Thread(target=driveCar)
+t1.start()
 
 # Exit
 t1.join()
-t2.join()
 rcCar.exit()
 sio.wait()

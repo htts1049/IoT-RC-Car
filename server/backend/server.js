@@ -30,7 +30,8 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(basePath, "index.html"));
 });
 
-/* Code for backend database
+
+/*
 const connection = createConnection({
   host: process.env.host || "localhost",
   user: process.env.user || "root",
@@ -38,46 +39,55 @@ const connection = createConnection({
   database: process.env.database || "infos",
 });
 
+
 connection.connect();
 */
 
-const getRandomIntInclusive = (min, max) => {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min; //최댓값도 포함, 최솟값도 포함
-};
+function test(json_data) {
+  
+  const query = "INSERT INTO your_table_name (forward, backward, leftside, rightside, image, datetime) VALUES ?";
+  const values = [[json_data.dist.up, json_data.dist.down, json_data.dist.left, json_data.dist.right, json_data.imageBlob, json_data.dateTime],]
+  const data = connection.query(
+    query, 
+    [values], function (err, result) {
+      if (err) throw err;
+      console.log("Number of records inserted: " + result.affectedRows);
+    }
+  );
+  console.log(data);
+  return data;
+}
 
 io.on("connection", (socket) => {
-  /* Code for backend database
-  socket.on("device backend", (name, file) => {
-    console.log(`receive file ${name} from device`);
+
+  socket.on("device backend", (json_data) => {
+    // console.log(`receive file ${name} from device`);
+    
+    /*
     writeFile(path.join(__dirname, "dist", "assets", name), file, (err) => {
       callback({ message: err ? "write failure" : "write success" });
     });
-    const query = `INSERT INTO ${process.env.table || "images"} VALUES ${name}`;
-    connection.query(query, (err, rows, field) => {
-      callback({ message: err ? "insert failure" : "insert success" });
-    });
-  });
-  */
+    */
+
+    console.log(json_data);
+
+    
+    // console.log(test(json_data));
+    const dist = {
+      up: json_data.dist.up,
+      left: json_data.dist.left,
+      right: json_data.dist.right,
+      down: json_data.dist.down,
+    }
+    
+    console.log(dist);
+   
+    socket.broadcast.emit("backend frontend", dist);
+  })
 
   socket.on("frontend backend", (command) => {
     console.log(command);
     socket.broadcast.emit("backend device", command);
-  });
-
-  socket.on("device backend", (dist) => {
-    console.log(dist);
-    //const time = "screen"; // Date.now().toString();
-    /* Code for backend frontend
-    console.log(path.join(frontPath, "screen.jpg"));
-    console.log(path.join(frontPath, time + ".jpg"));
-    copyFileSync(
-      path.join(frontPath, "screen.jpg"),
-      path.join(frontPath, time + ".jpg")
-    );
-    */
-    socket.broadcast.emit("backend frontend", dist);
   });
 });
 

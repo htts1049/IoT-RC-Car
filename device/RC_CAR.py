@@ -3,7 +3,6 @@ sys.path.append('Raspi-MotorHAT-python3')
 
 from Raspi_MotorHAT import Raspi_MotorHAT, Raspi_DCMotor
 from Raspi_PWM_Servo_Driver import PWM
-   
 
 # Configure DC Motor
 mh = Raspi_MotorHAT(addr = 0x6F)
@@ -13,7 +12,6 @@ dcMotor.setSpeed(0) # speed
 # Configure Servo Motor
 servo = PWM(0x6F)
 servo.setPWMFreq(60)
-
 
 # RC Car class for driving
 class rcCar:
@@ -58,7 +56,6 @@ class rcCar:
         elif(cmd == 'right_stop' and self.directionState == self.RIGHT):
             self.directionState = self.STOP
     
-
     # move forward
     def forward(self):
         if(self.speed >= 100):
@@ -66,7 +63,7 @@ class rcCar:
 
         self.speed += 1
         dcMotor.setSpeed(self.speed)
-        dcMotor.run(Raspi_MotorHAT.FORWARD)
+        dcMotor.run(Raspi_MotorHAT.BACKWARD)
     
     # move backward
     def backward(self):
@@ -75,11 +72,11 @@ class rcCar:
 
         self.speed += 1
         dcMotor.setSpeed(self.speed)
-        dcMotor.run(Raspi_MotorHAT.BACKWARD)
+        dcMotor.run(Raspi_MotorHAT.FORWARD)
 
     # turn left
     def left(self):
-        if(self.direction <= 300):
+        if(self.direction <= 350):
             return
 
         self.direction -= 1
@@ -87,7 +84,7 @@ class rcCar:
         
     # turn right
     def right(self):
-        if(self.direction >= 600):
+        if(self.direction >= 550):
             return
 
         self.direction += 1
@@ -98,8 +95,8 @@ class rcCar:
         self.speed = 0
         dcMotor.setSpeed(self.speed)
 
-    # quit running 
-    def exit(self):
+    # quit running
+    def quit(self):
         dcMotor.setSpeed(0)
         dcMotor.run(Raspi_MotorHAT.RELEASE)
         servo.setPWM(0, 0, 450)
