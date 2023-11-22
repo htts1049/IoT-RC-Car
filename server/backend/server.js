@@ -4,8 +4,6 @@ const cors = require("cors");
 //const https = require("https");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
-const { writeFile, copyFileSync } = require("fs");
-
 const { createConnection } = require("mysql");
 
 require("dotenv").config();
@@ -30,63 +28,46 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(basePath, "index.html"));
 });
 
-
-/*
 const connection = createConnection({
   host: process.env.host || "localhost",
   user: process.env.user || "root",
   password: process.env.password || "root",
-  database: process.env.database || "infos",
+  database: process.env.database || "car",
 });
 
-
 connection.connect();
-*/
 
-function test(json_data) {
-  
-  const query = "INSERT INTO your_table_name (forward, backward, leftside, rightside, image, datetime) VALUES ?";
-  const values = [[json_data.dist.up, json_data.dist.down, json_data.dist.left, json_data.dist.right, json_data.imageBlob, json_data.dateTime],]
-  const data = connection.query(
-    query, 
-    [values], function (err, result) {
-      if (err) throw err;
-      console.log("Number of records inserted: " + result.affectedRows);
-    }
-  );
-  console.log(data);
-  return data;
-}
+const insertDB = (json_data) => {
+  const query = `INSERT INTO ${
+    process.env.database || "info"
+  } (forward, backward, leftside, rightside, image, datetime) VALUES ?`;
+  const values = [
+    [...Object.values(json_data.dist), json_data.imageBlob, json_data.dateTime],
+  ];
+  connection.query(query, [values], function (err, result) {
+    if (err) throw err;
+    console.log("Number of records inserted: " + result.affectedRows);
+  });
+};
 
 io.on("connection", (socket) => {
-
   socket.on("device backend", (json_data) => {
-    // console.log(`receive file ${name} from device`);
-    
-    /*
-    writeFile(path.join(__dirname, "dist", "assets", name), file, (err) => {
-      callback({ message: err ? "write failure" : "write success" });
-    });
-    */
-
-    console.log(json_data);
-
-    
-    // console.log(test(json_data));
-    const dist = {
-      up: json_data.dist.up,
-      left: json_data.dist.left,
-      right: json_data.dist.right,
-      down: json_data.dist.down,
+    insertDB(json_data);
+    const threshold = 10;
+    let dist = {};
+    for (let d in json_data.dist) {
+      dist[d] = json_data.dist[d] < threshold;
     }
-    
-    console.log(dist);
-   
-    socket.broadcast.emit("backend frontend", dist);
-  })
+
+    socket.broadcast.emit(
+      "backend frontend",
+      dist,
+      json_data.blob,
+      json_data.dateTime
+    );
+  });
 
   socket.on("frontend backend", (command) => {
-    console.log(command);
     socket.broadcast.emit("backend device", command);
   });
 });
