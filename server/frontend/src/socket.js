@@ -12,7 +12,6 @@ export const socket_states = reactive({
   src: "/src/assets/screen.jpg",
   time: new Date().toString(),
   speed: 0,
-  off: false,
 });
 
 const URL = "http://localhost:3000";
@@ -42,7 +41,6 @@ socket.on("backend frontend", (dist, imageBlob, dateTime, speed, off) => {
     socket_states.src = window.URL.createObjectURL(blob);
     socket_states.time = dateTime.toString();
     socket_states.speed = speed;
-    socket_states.off = off;
   } else {
     first = false;
     window.URL.revokeObjectURL(socket_states.src);
@@ -55,7 +53,6 @@ socket.on("backend frontend", (dist, imageBlob, dateTime, speed, off) => {
     socket_states.src = "/src/assets/screen.jpg";
     socket.states.time = new Date().toString();
     socket_states.speed = 0;
-    socket_states.off = off;
   }
 });
 

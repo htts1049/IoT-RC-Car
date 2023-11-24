@@ -40,9 +40,9 @@ connection.connect();
 const insertDB = (json_data) => {
   const query = `INSERT INTO ${
     process.env.table || "info"
-  } (forward, backward, image, datetime) VALUES ?`;
+  } (forward, backward, image, datetime, speed, off) VALUES ?`;
   const values = [
-    [...Object.values(json_data.dist), json_data.imageBlob, json_data.dateTime],
+    [...Object.values(json_data.dist), json_data.imageBlob, json_data.dateTime, json_data.speed, json_data.off],
   ];
   connection.query(query, [values], function (err, result) {
     if (err) throw err;
@@ -53,18 +53,22 @@ const insertDB = (json_data) => {
 io.on("connection", (socket) => {
   socket.on("device backend", (json_data) => {
     insertDB(json_data);
-    const threshold = 10;
+    const threshold = 20;
     const dist = {
       up: json_data.dist.up < threshold,
       left: false,
       right: false,
       down: json_data.dist.down < threshold,
     };
+
+    console.log(json_data);
     socket.broadcast.emit(
       "backend frontend",
       dist,
       json_data.imageBlob,
-      json_data.dateTime
+      json_data.dateTime,
+      json_data.speed,
+      json_data.off
     );
   });
 
