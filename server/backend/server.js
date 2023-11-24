@@ -39,8 +39,8 @@ connection.connect();
 
 const insertDB = (json_data) => {
   const query = `INSERT INTO ${
-    process.env.database || "info"
-  } (forward, backward, leftside, rightside, image, datetime) VALUES ?`;
+    process.env.table || "info"
+  } (forward, backward, image, datetime) VALUES ?`;
   const values = [
     [...Object.values(json_data.dist), json_data.imageBlob, json_data.dateTime],
   ];

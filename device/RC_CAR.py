@@ -23,6 +23,7 @@ class rcCar:
     LEFT = 4
     RIGHT = 5
     STOP = 6
+    OFF = 7
     
     def __init__(self, speed=0, direction=500, moveState=3, directionState=6):
         self.speed = speed
@@ -32,16 +33,16 @@ class rcCar:
 
     # set RC Car status according to command
     def setState(self, cmd):
-        if(cmd == 'up' and self.moveState == self.RELEASE):
+        if(cmd == 'up_press' and self.moveState == self.RELEASE):
             self.moveState = self.FORWARD
 
-        elif(cmd == 'down' and self.moveState == self.RELEASE):
+        elif(cmd == 'down_press' and self.moveState == self.RELEASE):
             self.moveState = self.BACKWARD
 
-        elif(cmd == 'left' and self.directionState == self.STOP):
+        elif(cmd == 'left_press' and self.directionState == self.STOP):
             self.directionState = self.LEFT
 
-        elif(cmd == 'right' and self.directionState == self.STOP):
+        elif(cmd == 'right_press' and self.directionState == self.STOP):
             self.directionState = self.RIGHT
 
         elif(cmd == 'up_stop' and self.moveState == self.FORWARD):
@@ -55,39 +56,43 @@ class rcCar:
 
         elif(cmd == 'right_stop' and self.directionState == self.RIGHT):
             self.directionState = self.STOP
+        
+        elif(cmd == 'off'):
+            self.moveState = self.OFF
+            self.directionState = self.OFF
     
     # move forward
     def forward(self):
-        if(self.speed >= 100):
+        if(self.speed >= 120):
             return
 
-        self.speed += 1
+        self.speed += 10
         dcMotor.setSpeed(self.speed)
         dcMotor.run(Raspi_MotorHAT.BACKWARD)
     
     # move backward
     def backward(self):
-        if(self.speed >= 100):
+        if(self.speed >= 120):
             return
 
-        self.speed += 1
+        self.speed += 10
         dcMotor.setSpeed(self.speed)
         dcMotor.run(Raspi_MotorHAT.FORWARD)
 
     # turn left
     def left(self):
-        if(self.direction <= 350):
+        if(self.direction <= 330):
             return
 
-        self.direction -= 1
+        self.direction -= 10
         servo.setPWM(0, 0, self.direction)
         
     # turn right
     def right(self):
-        if(self.direction >= 550):
+        if(self.direction >= 570):
             return
 
-        self.direction += 1
+        self.direction += 10
         servo.setPWM(0, 0, self.direction)
 
     # stop moving
