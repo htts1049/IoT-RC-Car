@@ -7,7 +7,8 @@ import { socket_states } from "@/socket.js";
   <main>
     <div>
       <img alt="Camera screen" class="camera" :src="socket_states.src" />
-      <p class="time">{{ socket_states.time }}</p>
+      <p class="text">time : {{ socket_states.time }}</p>
+      <p class="text">speed : {{ socket_states.speed }}</p>
     </div>
     <Controller />
   </main>
@@ -30,7 +31,7 @@ main {
   height: auto;
 }
 
-.time {
+.text {
   text-align: center;
 }
 </style>

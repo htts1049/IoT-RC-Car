@@ -82,7 +82,7 @@ const clickButton = (event) => {
   }
 };
 
-const clickOff = () => {
+const clickOff = (event) => {
   socket.emit("frontend backend", "off");
 };
 
@@ -195,7 +195,11 @@ const setStateByDist = (dist) => {
       <img alt="left" :class="states[1].class" src="../assets/left.svg" />
     </div>
     <div class="off" @click="clickOff">
-      <img alt="off" class="pressed" src="../assets/off.svg" />
+      <img
+        alt="off"
+        :class="socket_states.off === false ? 'pressed' : 'none'"
+        src="../assets/off.svg"
+      />
     </div>
     <div class="right" @click="clickButton">
       <img alt="right" :class="states[2].class" src="../assets/right.svg" />
