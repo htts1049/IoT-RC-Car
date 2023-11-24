@@ -197,7 +197,7 @@ const setStateByDist = (dist) => {
     <div class="off" @click="clickOff">
       <img
         alt="off"
-        :class="socket_states.off === false ? 'pressed' : 'none'"
+        class="pressed"
         src="../assets/off.svg"
       />
     </div>

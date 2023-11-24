@@ -2,6 +2,7 @@ import os
 import threading
 import socketio
 import cv2
+from time import sleep
 from RC_CAR import *
 from DISTANCE import *
 
@@ -57,13 +58,7 @@ def driveCar(car):
 async def sendData(car):
 
     while True:
-        if(driveCar(car) == (car.OFF, car.OFF)):
-            car.quit()
-            sio.disconnect()
-            return
         
-        print(car.moveState, car.directionState)
-
         # get distance
         up = round(await forwardDistance(), 6)
         down = round(await backwardDistance(), 6)
@@ -91,7 +86,18 @@ async def sendData(car):
                     },
                 'imageBlob' : imageBlob,
                 'dateTime' : dateTime,
+                'speed' : car.speed,
+                'off' : False,
                 }
+
+        # drive RC car
+        if(driveCar(car) == (car.OFF, car.OFF)):
+            car.quit()
+            json_data['off'] = True
+            sio.emit('device backend', json_data)
+            sleep(2)
+            sio.disconnect()
+            return
 
         # send datas to server
         sio.emit('device backend', json_data)
