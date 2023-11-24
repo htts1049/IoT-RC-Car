@@ -49,17 +49,25 @@ const clickButton = (event) => {
       if (!state.pressed && !state.blocked) {
         if (!state.clicked) {
           if (
-            states.value[3 - si].blocked ||
-            (!states.value[3 - si].pressed && !states.value[3 - si].clicked)
+            !(
+              !states.value[3 - si].blocked &&
+              (states.value[3 - si].pressed || states.value[3 - si].clicked)
+            )
           ) {
             changed = true;
-            message += `${state.target}_press `;
+            if (message !== "") {
+              message += " ";
+            }
+            message += `${state.target}_press`;
             state.class = "pressed";
             state.clicked = true;
           }
         } else {
           changed = true;
-          message += `${state.target}_stop `;
+          if (message !== "") {
+            message += " ";
+          }
+          message += `${state.target}_stop`;
           state.class = "none";
           state.clicked = false;
         }
@@ -74,26 +82,35 @@ const clickButton = (event) => {
   }
 };
 
+const clickOff = () => {
+  socket.emit("frontend backend", "off");
+};
+
 document.addEventListener("keydown", (event) => {
   let changed = false;
   let message = "";
   let newstate = states.value.map((state, si) => {
     if (state.keys.includes(event.key)) {
-      let ki = state.keys.findIndex((key) => key === event.key);
-      if ((state.keynum >> ki) % 2 === 0) {
-        state.keynum += 1 << ki;
-        if (!state.pressed) {
-          if (!state.clicked && !state.blocked) {
-            if (
-              states.value[3 - si].blocked ||
-              (!states.value[3 - si].pressed && !states.value[3 - si].clicked)
-            ) {
-              changed = true;
-              message += `${state.target}_press `;
-              state.class = "pressed";
+      if (
+        !state.clicked &&
+        !state.blocked &&
+        !(
+          !states.value[3 - si].blocked &&
+          (states.value[3 - si].pressed || states.value[3 - si].clicked)
+        )
+      ) {
+        const ki = state.keys.findIndex((key) => key === event.key);
+        if ((state.keynum >> ki) % 2 === 0) {
+          state.keynum += 1 << ki;
+          if (!state.pressed) {
+            changed = true;
+            if (message !== "") {
+              message += " ";
             }
+            message += `${state.target}_press`;
+            state.class = "pressed";
+            state.pressed = true;
           }
-          state.pressed = true;
         }
       }
     }
@@ -101,25 +118,26 @@ document.addEventListener("keydown", (event) => {
   });
   if (changed) {
     console.log("down");
-    states.value = newstate;
     socket.emit("frontend backend", message);
+    states.value = newstate;
   }
 });
 
 document.addEventListener("keyup", (event) => {
   let changed = false;
   let message = "";
-  let newstate = states.value.map((state, si) => {
+  let newstate = states.value.map((state) => {
     if (state.keys.includes(event.key)) {
-      let ki = state.keys.findIndex((key) => key === event.key);
+      const ki = state.keys.findIndex((key) => key === event.key);
       if ((state.keynum >> ki) % 2 === 1) {
         state.keynum -= 1 << ki;
-        if (state.keynum === 0) {
-          if (!state.clicked && !state.blocked) {
-            changed = true;
-            message += `${state.target}_stop `;
-            state.class = "none";
+        if (state.keynum === 0 && !state.clicked && !state.blocked) {
+          changed = true;
+          if (message !== "") {
+            message += " ";
           }
+          message += `${state.target}_stop`;
+          state.class = "none";
           state.pressed = false;
         }
       }
@@ -128,8 +146,8 @@ document.addEventListener("keyup", (event) => {
   });
   if (changed) {
     console.log("up");
-    states.value = newstate;
     socket.emit("frontend backend", message);
+    states.value = newstate;
   }
 });
 
@@ -142,7 +160,10 @@ const setStateByDist = (dist) => {
         changed = true;
         state.blocked = true;
         state.class = "blocked";
-        message += `${state.target}_stop `;
+        if (message !== "") {
+          message += " ";
+        }
+        message += `${state.target}_stop`;
       } else if (!dist[state.target] && state.blocked) {
         changed = true;
         state.class = "none";
@@ -156,8 +177,8 @@ const setStateByDist = (dist) => {
   });
   if (changed) {
     console.log("set");
-    states.value = newstate;
     socket.emit("frontend backend", message);
+    states.value = newstate;
   }
 };
 </script>
@@ -172,6 +193,9 @@ const setStateByDist = (dist) => {
     </div>
     <div class="left" @click="clickButton">
       <img alt="left" :class="states[1].class" src="../assets/left.svg" />
+    </div>
+    <div class="off" @click="clickOff">
+      <img alt="off" class="pressed" src="../assets/off.svg" />
     </div>
     <div class="right" @click="clickButton">
       <img alt="right" :class="states[2].class" src="../assets/right.svg" />
@@ -190,10 +214,11 @@ const setStateByDist = (dist) => {
   aspect-ratio: 1 / 1;
   grid-template-areas:
     ". up ."
-    "left .  right"
+    "left off  right"
     ". down .";
   grid-template-rows: 1fr 1fr 1fr;
   grid-template-columns: 1fr 1fr 1fr;
+  grid-gap: 5% 5%;
 }
 .controller > .up {
   grid-area: up;
@@ -216,6 +241,12 @@ const setStateByDist = (dist) => {
 .controller > .down {
   grid-area: down;
   background-color: #8cffa0;
+  border-radius: 50%;
+}
+
+.controller > .off {
+  grid-area: off;
+  background-color: black;
   border-radius: 50%;
 }
 

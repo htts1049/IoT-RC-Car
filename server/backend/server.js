@@ -54,11 +54,12 @@ io.on("connection", (socket) => {
   socket.on("device backend", (json_data) => {
     insertDB(json_data);
     const threshold = 10;
-    let dist = {};
-    for (let d in json_data.dist) {
-      dist[d] = json_data.dist[d] < threshold;
-    }
-
+    const dist = {
+      up: json_data.dist.up < threshold,
+      left: false,
+      right: false,
+      down: json_data.dist.down < threshold,
+    };
     socket.broadcast.emit(
       "backend frontend",
       dist,
